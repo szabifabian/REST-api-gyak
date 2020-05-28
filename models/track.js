@@ -1,19 +1,20 @@
-const Sequelize = require('sequelize')
-const sequelize = new Sequelize('sqlite://db.sqlite')
-
-const Track = sequelize.define('track', {
-    // attributes
+'use strict';
+module.exports = (sequelize, DataTypes) => {
+  const track = sequelize.define('track', {
     name: {
-        type: Sequelize.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false
     },
     color: {
-        type: Sequelize.STRING,
-        defaultValue: '#ffff',
-        allowNull: false
+      type: DataTypes.STRING,
+      defaultValue: '#ffff',
+      allowNull: false
     }
-}, {
-    // options
-});
+  }, {});
+  track.associate = function (models) {
+    // associations can be defined here
+    track.belongsTo(models.user) //track.setUser(), track.getUser()...
 
-module.exports = Track;
+  };
+  return track;
+};

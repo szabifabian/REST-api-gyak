@@ -1,7 +1,9 @@
 const express = require('express');
-const asyncHandler = require('express-async-handler') //hibakezelő
+//const asyncHandler = require('express-async-handler') //hibakezelő
 const router = express.Router()
-const Track = require('../models/track')
+const Track = require('../models').track
+const asyncErrors = require('express-async-errors')
+const NotFoundError = require('../errors/notfound')
 /*
     GET     /tracks  --trackek lekérése
     GET     /tracks/:id   --egy track id alapján lekérni
@@ -11,19 +13,25 @@ const Track = require('../models/track')
     PATCH   /tracks/:id --módosítás
     DELETE  /tracks    ---mindent töröl
     DELETE  /tracks/:id --egy adott tracket töröl
-
+    /tracks/?userId=1
 */
 
 
 router
-    .get('/', asyncHandler(async (req, res) => {
+    .get('/', (async (req, res) => {
 
-        const allTracks = await Track.findAll();
-        res.send(allTracks)
+        const userId = req.query.userId
+        const tracks = userId ?
+            await Track.findAll({ where: { userId: userId } })
+            : await Track.findAll()
+        res.send(tracks)
+
+        /*const allTracks = await Track.findAll();
+        res.send(allTracks)*/
     }
     ))
 
-    .post('/', asyncHandler(async (req, res) => {
+    .post('/', (async (req, res) => {
 
         const reqTrack = req.body
         const newTrack = await Track.create(reqTrack)
@@ -31,14 +39,21 @@ router
     }
     ))
 
-    .get('/:id', asyncHandler(async (req, res) => {
+    .get('/:id', (async (req, res) => {
         const id = req.params.id
         const track = await Track.findOne({ where: { id: id } })
-        res.send(track ? track : 404)
+
+        //throw new Error(`Personal error!!!`)
+
+        if (!track) {
+            throw new NotFoundError(`Track not found`)
+        }
+        res.status(200).send(track)
+        //res.send(track ? track : 404)
     }
     ))
 
-    .put('/:id', asyncHandler(async (req, res) => {
+    .put('/:id', (async (req, res) => {
         const id = req.params.id
         const reqTrack = req.body
         const newTrack = await Track.update(reqTrack, { where: { id: id } })
@@ -50,14 +65,14 @@ router
         res.send(`Patch`)
     )
 
-    .delete('/:id', asyncHandler(async (req, res) => {
+    .delete('/:id', (async (req, res) => {
         const id = req.params.id
         await Track.destroy({ where: { id: id } })
         res.send(204)
 
     }))
 
-    .delete('/', asyncHandler(async (req, res) => {
+    .delete('/', (async (req, res) => {
         await Track.destroy({ truncate: true })
         res.send(204)
     }))
